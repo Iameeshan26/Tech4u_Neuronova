@@ -1,0 +1,7 @@
+ortools>=9.6
+requests
+pandas
+numpy
+geopandas
+shapely
+folium
