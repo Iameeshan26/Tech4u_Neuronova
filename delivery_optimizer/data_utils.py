@@ -112,7 +112,8 @@ def get_tomtom_matrix(df_locations):
             response = requests.post(url, json=payload, headers=headers)
             if response.status_code == 200:
                 data = response.json()
-                data_matrix = data['matrix']
+                logger.info(f"TomTom API Response: {data}")
+                data_matrix = data['data']
                 
                 size = len(df_locations)
                 dist_matrix = np.zeros((size, size))
@@ -121,8 +122,8 @@ def get_tomtom_matrix(df_locations):
                 for i in range(size):
                     for j in range(size):
                         cell = data_matrix[i * size + j]
-                        if 'response' in cell and 'routeSummary' in cell['response']:
-                            summary = cell['response']['routeSummary']
+                        if 'routeSummary' in cell:
+                            summary = cell['routeSummary']
                             dist_matrix[i][j] = summary['lengthInMeters']
                             time_matrix[i][j] = summary['travelTimeInSeconds']
                         else:
