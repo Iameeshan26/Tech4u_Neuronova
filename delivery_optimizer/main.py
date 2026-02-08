@@ -72,20 +72,14 @@ import sys
 def main():
     logger.info("Starting Dynamic Last-Mile Delivery Optimizer MVP...")
     
-    parser = argparse.ArgumentParser(description="Dynamic Last-Mile Delivery Optimizer")
-    parser.add_argument('--file', type=str, help='Path to CSV file with locations')
-    args = parser.parse_args()
-    
-    # 1. Load Data (CSV or Mock)
-    if args.file:
-        logger.info(f"Loading data from {args.file}...")
-        df = data_utils.load_data_from_csv(args.file)
-        if df is None:
-            logger.error("Failed to load data from CSV. Exiting.")
-            return
-    else:
-        logger.info("No input file provided. Generating mock data...")
-        df = data_utils.generate_mock_data(num_stops=10)
+    # 1. Load Data (Hardcoded to locations.csv)
+    file_path = os.path.join(os.path.dirname(__file__), 'locations.csv')
+    logger.info(f"Loading data from {file_path}...")
+    df = data_utils.load_data_from_csv(file_path)
+
+    if df is None:
+        logger.error("Failed to load data from CSV. Exiting.")
+        return
     
     print("Delivery Locations:")
     print(df[['id', 'demand', 'priority']])
