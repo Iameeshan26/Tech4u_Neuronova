@@ -163,3 +163,53 @@ def get_tomtom_matrix(df_locations):
                 time_matrix[i][j] = dist / speed_mps
                 
     return dist_matrix, time_matrix
+
+def get_tomtom_route(locations_sequence):
+    """
+    Fetches the detailed routing path between a sequence of locations using TomTom Routing API.
+    locations_sequence: List of (lat, lon) tuples.
+    Returns: List of (lat, lon) tuples representing the detailed path.
+    """
+    if len(locations_sequence) < 2:
+        return locations_sequence
+
+    # TomTom Calculate Route expects waypoints in the URL as:
+    # origin:destination:waypoint1:waypoint2...
+    # But for simplicity and to handle many waypoints, we can use the POST method if needed.
+    # For now, let's use the GET method as it's common for simple sequences.
+    
+    # Format: lat,lon:lat,lon:...
+    points_str = ":".join([f"{lat},{lon}" for lat, lon in locations_sequence])
+    
+    url = f"https://api.tomtom.com/routing/1/calculateRoute/{points_str}/json?key={config.TOMTOM_API_KEY}"
+    
+    params = {
+        "routeType": "fastest",
+        "travelMode": "truck"
+    }
+
+    if config.TOMTOM_API_KEY != "YOUR_TOMTOM_API_KEY" and config.TOMTOM_API_KEY != "mock":
+        try:
+            response = requests.get(url, params=params)
+            if response.status_code == 200:
+                data = response.json()
+                logger.info("Successfully fetched TomTom Routing data.")
+                
+                # Extract coordinates from the response
+                # data['routes'][0]['legs'] contains points for each leg
+                detailed_path = []
+                for route in data.get('routes', []):
+                    for leg in route.get('legs', []):
+                        for point in leg.get('points', []):
+                            detailed_path.append((point['latitude'], point['longitude']))
+                
+                if detailed_path:
+                    return detailed_path
+            else:
+                logger.warning(f"TomTom Routing API failed with status {response.status_code}: {response.text}")
+        except Exception as e:
+            logger.error(f"Error calling TomTom Routing API: {e}")
+
+    # Fallback: return the original sequence (straight lines)
+    logger.info("Using straight-line fallback for route visualization.")
+    return locations_sequence
