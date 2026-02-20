@@ -51,10 +51,15 @@ def visualize_route(df_data, routes, filename="route_map.html"):
         vehicle_id = route['vehicle']
         sequence_indices = route['sequence']
         
-        route_coords = []
+        # 1. Get simple sequence of stops
+        stop_coords = []
         for idx in sequence_indices:
             row = df_data.iloc[idx]
-            route_coords.append((row['lat'], row['lon']))
+            stop_coords.append((row['lat'], row['lon']))
+            
+        # 2. Get detailed routing path from TomTom
+        logger.info(f"Fetching detailed route for vehicle {vehicle_id}...")
+        route_coords = data_utils.get_tomtom_route(stop_coords)
             
         folium.PolyLine(
             route_coords,
@@ -62,6 +67,7 @@ def visualize_route(df_data, routes, filename="route_map.html"):
             weight=2.5,
             opacity=1
         ).add_to(m)
+
         
     m.save(filename)
     logger.info(f"Map saved to {filename}")
