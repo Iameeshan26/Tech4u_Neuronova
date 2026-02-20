@@ -136,12 +136,17 @@ class RouteOptimizer:
         # 6. Solve
         search_parameters = pywrapcp.DefaultRoutingSearchParameters()
         search_parameters.first_solution_strategy = (
-            routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
+            routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_INSERTION
         )
-        search_parameters.time_limit.seconds = 10 # 10s timeout
+        # Use Guided Local Search to find more optimal solutions
+        search_parameters.local_search_metaheuristic = (
+            routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
+        )
+        search_parameters.time_limit.seconds = 15 # Increased timeout for local search
         
         self.solution = self.routing.SolveWithParameters(search_parameters)
         return self.solution
+
 
     def print_solution(self):
         """Prints solution on console."""
