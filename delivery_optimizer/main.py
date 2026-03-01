@@ -51,7 +51,7 @@ def visualize_route(df_data, routes, filename="route_map.html"):
     for route in routes:
         vehicle_id = route['vehicle']
         sequence_indices = route['sequence']
-        
+    
         # 1. Get simple sequence of stops
         stop_coords = []
         for idx in sequence_indices:
