@@ -52,11 +52,18 @@ CACHE_TTL = 3600 # 1 hour
 # If predicted ETA deviates by more than this percentage, re-optimization might be triggered
 REOPTIMIZATION_VARIANCE_THRESHOLD = 0.15 # 15%
 
-# Other Constants
-FALLBACK_SPEED_KMH = 30.0 # Average speed for Haversine time estimation
+# City-Agnostic Configuration
+from city_configs import get_city_profile
+
+# Active City Profile (Can be overridden at runtime)
+ACTIVE_CITY = os.getenv("NEURONOVA_CITY", "berlin")
+CITY_PROFILE = get_city_profile(ACTIVE_CITY)
+
+# Fallback Constants (Informed by city profile)
+FALLBACK_SPEED_KMH = CITY_PROFILE["avg_speed_kmh"]
 
 # Weather Impact Factors (Multipliers for travel time)
-WEATHER_IMPACT_FACTORS = {
+_base_weather_impact = {
     "Clear": 1.0,
     "Clouds": 1.05,
     "Rain": 1.25,
@@ -65,6 +72,12 @@ WEATHER_IMPACT_FACTORS = {
     "Snow": 1.6,
     "Mist": 1.1,
     "Fog": 1.2,
+}
+
+# Scale weather impact based on city sensitivity
+WEATHER_IMPACT_FACTORS = {
+    k: 1.0 + (v - 1.0) * CITY_PROFILE["weather_sensitivity"]
+    for k, v in _base_weather_impact.items()
 }
 DEFAULT_WEATHER_IMPACT = 1.0
 

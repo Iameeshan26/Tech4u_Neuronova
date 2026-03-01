@@ -154,15 +154,28 @@ def generate_logistics_dashboard(routes, weather, output_path):
     logger.info(f"Logistics Dashboard saved to {output_path}")
 
 def main():
-    logger.info("Starting Dynamic Last-Mile Delivery Optimizer MVP...")
+    import argparse
+    parser = argparse.ArgumentParser(description="Neuronova Delivery Optimizer")
+    parser.add_argument("--city", type=str, default="berlin", help="City profile to use")
+    parser.add_argument("--mock", action="store_true", help="Generate mock data")
+    args = parser.parse_args()
+
+    # Update global config for this run
+    import city_configs
+    profile = city_configs.get_city_profile(args.city)
+    config.FALLBACK_SPEED_KMH = profile["avg_speed_kmh"]
+    
+    logger.info(f"Starting {profile['name']} Delivery Optimizer...")
     
     base_dir = os.path.dirname(os.path.dirname(__file__))
-    file_path = os.path.join(base_dir, 'data', 'locations.csv')
-    output_dir = os.path.join(base_dir, 'output')
-    os.makedirs(output_dir, exist_ok=True)
     
-    logger.info(f"Loading data from {file_path}...")
-    df = data_utils.load_data_from_csv(file_path)
+    if args.mock:
+        logger.info(f"Generating mock data for {args.city}...")
+        df = data_utils.generate_mock_data(profile)
+    else:
+        file_path = os.path.join(base_dir, 'data', 'locations.csv')
+        logger.info(f"Loading data from {file_path}...")
+        df = data_utils.load_data_from_csv(file_path)
     if df is None: return
 
     print("Delivery Locations:")

@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-50 antialiased;
+  }
+}
+
+.glass-morphism {
+  @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-xl;
+}
