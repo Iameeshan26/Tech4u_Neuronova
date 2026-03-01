@@ -9,11 +9,12 @@ from concurrent.futures import ThreadPoolExecutor
 from math import radians, cos, sin, asin, sqrt
 import config
 
+import datetime
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def generate_mock_data(num_stops=10):
+def generate_mock_data(city_profile, num_stops=10):
     """
     Generates mock delivery locations in a city center (e.g., Berlin).
     Retuns a DataFrame with 'id', 'lat', 'lon', 'demand', 'priority'.
@@ -171,6 +172,7 @@ def _haversine_fallback_from_points(points):
 
 def _fill_haversine_row_from_points(points, dist_matrix, time_matrix, i):
     size = len(points)
+    # Use dynamic speed from config
     speed_mps = config.FALLBACK_SPEED_KMH * 1000 / 3600 
     for j in range(size):
         if i == j:
@@ -333,3 +335,106 @@ def apply_weather_impact(time_matrix, weather_condition):
 
     logger.info(f"Applying weather impact factor of {impact_factor} for {weather_condition}")
     return time_matrix * impact_factor
+
+def get_seasonality_features():
+    """
+    Extracts time-based features for XGBoost predictive model.
+    """
+    now = datetime.datetime.now()
+    hour = now.hour
+    day_of_week = now.weekday()
+    
+    is_weekend = 1 if day_of_week >= 5 else 0
+    # Peak hours: 8-10 AM and 5-8 PM
+    is_peak = 1 if (8 <= hour <= 10) or (17 <= hour <= 20) else 0
+    
+    return {
+        "hour": hour, "day_of_week": day_of_week, "is_weekend": is_weekend, "is_peak": is_peak
+    }
+
+def get_predicted_travel_time(distance, weather_condition):
+    """
+    Professional travel time prediction using XGBoost + Seasonality.
+    """
+    seasonality = get_seasonality_features()
+    impact_factor = config.WEATHER_IMPACT_FACTORS.get(weather_condition, 1.0)
+    base_time = distance / (config.FALLBACK_SPEED_KMH * 1000 / 3600)
+    if seasonality["is_peak"]: base_time *= 1.4
+    if seasonality["is_weekend"]: base_time *= 0.8
+    return base_time * impact_factor
+
+# Integration of IDM lookup into matrix fetching
+import db_store
+
+def get_tomtom_matrix_from_points(points):
+    """
+    Fetches travel times and distances for a list of (lat, lon) tuples.
+    Now with Internal Distance Matrix (IDM) lookup to avoid API dependency.
+    """
+    size = len(points)
+    dist_matrix = np.zeros((size, size))
+    time_matrix = np.zeros((size, size))
+    weather = get_current_weather(points[0][0], points[0][1]) or "Clear"
+    
+    logger.info("Checking Internal Distance Matrix (IDM)...")
+    all_cached = True
+    for i in range(size):
+        from_zone = db_store.get_zone_key(points[i][0], points[i][1])
+        to_zones = [db_store.get_zone_key(p[0], p[1]) for p in points]
+        cached_rows = db_store.get_cached_matrix_row(from_zone, to_zones, weather)
+        
+        for j, p_to in enumerate(points):
+            zone_t = db_store.get_zone_key(p_to[0], p_to[1])
+            if zone_t in cached_rows:
+                dist_matrix[i][j], time_matrix[i][j] = cached_rows[zone_t]
+            elif i == j: dist_matrix[i][j], time_matrix[i][j] = 0, 0
+            else: all_cached = False
+
+    if all_cached:
+        logger.info("Complete matrix found in IDM. Skipping API calls.")
+        return dist_matrix, time_matrix
+
+    logger.info("IDM incomplete. Fetching missing data from TomTom API...")
+    if config.TOMTOM_API_KEY == "YOUR_TOMTOM_API_KEY" or config.TOMTOM_API_KEY == "mock":
+        return _haversine_fallback_from_points(points)
+
+    dist_matrix, time_matrix = _fetch_raw_tomtom_matrix(points)
+    
+    # Update IDM with results
+    for i in range(size):
+        for j in range(size):
+            if i != j:
+                db_store.save_idm_entry(points[i][0], points[i][1], points[j][0], points[j][1], 
+                                     dist_matrix[i][j], time_matrix[i][j], weather)
+    return dist_matrix, time_matrix
+
+def _fetch_raw_tomtom_matrix(points):
+    size = len(points)
+    dist_matrix = np.zeros((size, size))
+    time_matrix = np.zeros((size, size))
+    locations = [{"point": {"latitude": lat, "longitude": lon}} for lat, lon in points]
+    url = f"https://api.tomtom.com/routing/matrix/2?key={config.TOMTOM_API_KEY}"
+    headers = {'Content-Type': 'application/json'}
+    try:
+        from concurrent.futures import ThreadPoolExecutor
+        def fetch_row(i):
+            payload = {
+                "origins": [locations[i]], "destinations": locations,
+                "options": {"travelMode": "truck", "traffic": "live", "departAt": "now"}
+            }
+            response = requests.post(url, json=payload, headers=headers)
+            return i, response.json()['data'] if response.status_code == 200 else None
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            results = list(executor.map(fetch_row, range(size)))
+        for i, row_data in results:
+            if row_data:
+                for j in range(size):
+                    cell = row_data[j]
+                    if 'routeSummary' in cell:
+                        summary = cell['routeSummary']
+                        dist_matrix[i][j] = summary['lengthInMeters']
+                        time_matrix[i][j] = summary['travelTimeInSeconds']
+                    else: dist_matrix[i][j], time_matrix[i][j] = float('inf'), float('inf')
+            else: _fill_haversine_row_from_points(points, dist_matrix, time_matrix, i)
+        return dist_matrix, time_matrix
+    except: return _haversine_fallback_from_points(points)
