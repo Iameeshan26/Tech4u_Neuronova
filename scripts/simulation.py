@@ -1,12 +1,11 @@
-import pandas as pd
-import numpy as np
-import time
-import logging
-import os
-import config
-import data_utils
-from optimizer import RouteOptimizer
-from main import check_reoptimization
+import sys
+# Add project root to path
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
+import app.config as config
+import app.data_utils as data_utils
+from app.optimizer import RouteOptimizer
+from app.main import check_reoptimization
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -15,9 +14,9 @@ logger = logging.getLogger(__name__)
 def run_simulation():
     logger.info("--- Starting Delivery Simulation Mode ---")
     
-    # 1. Load Data
-    base_dir = os.path.dirname(__file__)
-    file_path = os.path.join(base_dir, 'locations.csv')
+    # 1. Load Data (in root/data/)
+    root_dir = os.path.dirname(os.path.dirname(__file__))
+    file_path = os.path.join(root_dir, 'data', 'locations.csv')
     df = data_utils.load_data_from_csv(file_path)
     if df is None:
         logger.error("Could not load locations.csv")
