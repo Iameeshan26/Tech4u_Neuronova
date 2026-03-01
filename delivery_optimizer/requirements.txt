@@ -1,8 +1,7 @@
-ortools>=9.6
+ortools==9.11.4280
+xgboost==2.0.3
 requests
 pandas
 numpy
 geopandas
-shapely
-folium
 python-dotenv
