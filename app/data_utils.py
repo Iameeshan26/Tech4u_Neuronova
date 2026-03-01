@@ -85,28 +85,39 @@ def haversine_distance(lat1, lon1, lat2, lon2):
 
 def get_tomtom_matrix(df_locations):
     """
-    Fetches travel times and distances with parallel processing and local caching.
+    Fetches travel times and distances for a DataFrame of locations.
     """
-    size = len(df_locations)
-    
     # 1. Try Loading from Cache
     cache_data = _load_matrix_cache(df_locations)
     if cache_data:
         logger.info("Using cached distance/time matrix.")
         return cache_data
 
-    # 2. Fetch via API (Parallelized)
+    locations = []
+    for _, row in df_locations.iterrows():
+        locations.append((row['lat'], row['lon']))
+    
+    dist_matrix, time_matrix = get_tomtom_matrix_from_points(locations)
+    
+    # Save to Cache
+    _save_matrix_cache(df_locations, dist_matrix, time_matrix)
+    
+    return dist_matrix, time_matrix
+
+def get_tomtom_matrix_from_points(points):
+    """
+    Fetches travel times and distances for a list of (lat, lon) tuples.
+    No automatic caching here (caching handled at higher level).
+    """
+    size = len(points)
     dist_matrix = np.zeros((size, size))
     time_matrix = np.zeros((size, size))
     
     if config.TOMTOM_API_KEY == "YOUR_TOMTOM_API_KEY" or config.TOMTOM_API_KEY == "mock":
         logger.info("Using placeholder API key or explicit 'mock' mode. Skipping API call.")
-        return _haversine_fallback(df_locations)
+        return _haversine_fallback_from_points(points)
 
-    locations = []
-    for _, row in df_locations.iterrows():
-        locations.append({"point": {"latitude": row['lat'], "longitude": row['lon']}})
-        
+    locations = [{"point": {"latitude": lat, "longitude": lon}} for lat, lon in points]
     url = f"https://api.tomtom.com/routing/matrix/2?key={config.TOMTOM_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     
@@ -142,21 +153,38 @@ def get_tomtom_matrix(df_locations):
                         dist_matrix[i][j] = float('inf')
                         time_matrix[i][j] = float('inf')
             else:
-                _fill_haversine_row(df_locations, dist_matrix, time_matrix, i)
+                _fill_haversine_row_from_points(points, dist_matrix, time_matrix, i)
         
-        # 3. Save to Cache
-        _save_matrix_cache(df_locations, dist_matrix, time_matrix)
-        
-        logger.info("Successfully fetched and cached TomTom Matrix data.")
         return dist_matrix, time_matrix
 
     except Exception as e:
         logger.error(f"Error calling TomTom API matrix: {e}")
+        return _haversine_fallback_from_points(points)
 
-    return _haversine_fallback(df_locations)
+def _haversine_fallback_from_points(points):
+    size = len(points)
+    dist_matrix = np.zeros((size, size))
+    time_matrix = np.zeros((size, size))
+    for i in range(size):
+        _fill_haversine_row_from_points(points, dist_matrix, time_matrix, i)
+    return dist_matrix, time_matrix
+
+def _fill_haversine_row_from_points(points, dist_matrix, time_matrix, i):
+    size = len(points)
+    speed_mps = config.FALLBACK_SPEED_KMH * 1000 / 3600 
+    for j in range(size):
+        if i == j:
+            dist_matrix[i][j] = 0
+            time_matrix[i][j] = 0
+        else:
+            dist = haversine_distance(points[i][0], points[i][1], points[j][0], points[j][1])
+            dist_matrix[i][j] = dist
+            time_matrix[i][j] = dist / speed_mps
 
 def _load_matrix_cache(df):
-    cache_path = os.path.join(os.path.dirname(__file__), config.CACHE_FILE)
+    # Cache is in root/data/
+    root_dir = os.path.dirname(os.path.dirname(__file__))
+    cache_path = os.path.join(root_dir, "data", config.CACHE_FILE)
     if not os.path.exists(cache_path):
         return None
         
@@ -179,7 +207,8 @@ def _load_matrix_cache(df):
         return None
 
 def _save_matrix_cache(df, dist, time_mat):
-    cache_path = os.path.join(os.path.dirname(__file__), config.CACHE_FILE)
+    root_dir = os.path.dirname(os.path.dirname(__file__))
+    cache_path = os.path.join(root_dir, "data", config.CACHE_FILE)
     cache = {
         "timestamp": time.time(),
         "size": len(df),

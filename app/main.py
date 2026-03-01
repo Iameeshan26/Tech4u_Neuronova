@@ -156,8 +156,8 @@ def generate_logistics_dashboard(routes, weather, output_path):
 def main():
     logger.info("Starting Dynamic Last-Mile Delivery Optimizer MVP...")
     
-    base_dir = os.path.dirname(__file__)
-    file_path = os.path.join(base_dir, 'locations.csv')
+    base_dir = os.path.dirname(os.path.dirname(__file__))
+    file_path = os.path.join(base_dir, 'data', 'locations.csv')
     output_dir = os.path.join(base_dir, 'output')
     os.makedirs(output_dir, exist_ok=True)
     
