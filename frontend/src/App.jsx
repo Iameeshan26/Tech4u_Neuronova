@@ -9,6 +9,7 @@ function App() {
     locations, setLocations,
     status, setStatus,
     currentCity,
+    routes,
     setRoutes,
     setOptimizationJob
   } = useAppStore();
