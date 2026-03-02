@@ -1,0 +1,33 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    command: python app/api.py
+
+  worker:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    command: python app/worker.py
+    depends_on:
+      - api
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+      - VITE_TOMTOM_API_KEY=${TOMTOM_API_KEY}
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - api
