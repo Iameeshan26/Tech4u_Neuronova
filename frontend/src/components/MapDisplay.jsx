@@ -1,4 +1,5 @@
-import * as tt from '@tomtom-org/maps-sdk/map';
+import React, { useEffect, useRef } from 'react';
+import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 const MapDisplay = ({ locations = [], routes = [] }) => {
@@ -8,27 +9,43 @@ const MapDisplay = ({ locations = [], routes = [] }) => {
     const routeLayers = useRef([]);
 
     useEffect(() => {
+        if (!mapElement.current || map.current) return;
+
         const apiKey = import.meta.env.VITE_TOMTOM_API_KEY;
         if (!apiKey) {
             console.error('TomTom API Key is missing');
             return;
         }
 
-        const ttMap = tt.map({
-            key: apiKey,
-            container: mapElement.current,
-            center: [13.405, 52.52], // Default to Berlin
-            zoom: 11,
-            stylesVisibility: {
-                trafficIncidents: true,
-                trafficFlow: true
+        console.log('Initializing MapLibre GL Map...');
+
+        // Using a high-quality open style to ensure tiles are displayed correctly
+        const styleUrl = 'https://tiles.openfreemap.org/styles/liberty';
+
+        try {
+            const mglMap = new maplibregl.Map({
+                container: mapElement.current,
+                style: styleUrl,
+                center: [13.405, 52.52], // Default to Berlin
+                zoom: 11,
+                attributionControl: false
+            });
+
+            mglMap.addControl(new maplibregl.NavigationControl(), 'top-right');
+            mglMap.addControl(new maplibregl.AttributionControl({ compact: true }));
+
+            map.current = mglMap;
+        } catch (error) {
+            console.error('Failed to initialize MapLibre map:', error);
+        }
+
+        return () => {
+            if (map.current) {
+                console.log('Cleaning up MapLibre Map...');
+                map.current.remove();
+                map.current = null;
             }
-        });
-
-        ttMap.addControl(new tt.NavigationControl());
-        map.current = ttMap;
-
-        return () => ttMap.remove();
+        };
     }, []);
 
     // Update Markers
@@ -40,16 +57,23 @@ const MapDisplay = ({ locations = [], routes = [] }) => {
         markers.current = [];
 
         if (locations.length > 0) {
-            const bounds = new tt.LngLatBounds();
+            const bounds = new maplibregl.LngLatBounds();
 
             locations.forEach((loc) => {
-                const marker = new tt.Marker()
-                    .setLngLat([loc.lon, loc.lat])
-                    .setPopup(new tt.Popup({ offset: 35 }).setHTML(`<b>Location ${loc.id}</b><br>Demand: ${loc.demand}`))
-                    .addTo(map.current);
+                try {
+                    const popup = new maplibregl.Popup({ offset: 25 })
+                        .setHTML(`<b>Location ${loc.id}</b><br>Demand: ${loc.demand}`);
 
-                markers.current.push(marker);
-                bounds.extend([loc.lon, loc.lat]);
+                    const marker = new maplibregl.Marker()
+                        .setLngLat([loc.lon, loc.lat])
+                        .setPopup(popup)
+                        .addTo(map.current);
+
+                    markers.current.push(marker);
+                    bounds.extend([loc.lon, loc.lat]);
+                } catch (err) {
+                    console.error('Error adding marker:', err);
+                }
             });
 
             if (!bounds.isEmpty()) {
@@ -62,7 +86,7 @@ const MapDisplay = ({ locations = [], routes = [] }) => {
     useEffect(() => {
         if (!map.current || !routes || routes.length === 0) return;
 
-        // Clear existing route layers
+        // Clear existing route layers and sources
         routeLayers.current.forEach(layerId => {
             if (map.current.getLayer(layerId)) map.current.removeLayer(layerId);
             if (map.current.getSource(layerId)) map.current.removeSource(layerId);
@@ -77,45 +101,48 @@ const MapDisplay = ({ locations = [], routes = [] }) => {
             const layerId = `route-${index}`;
             const color = colors[index % colors.length];
 
-            // TomTom SDK expects [lon, lat] for Geospatial data in GeoJSON
+            // GeoJSON coordinates [lon, lat]
             const coordinates = route.path.map(point => [point[1], point[0]]);
 
-            map.current.addSource(layerId, {
-                'type': 'geojson',
-                'data': {
-                    'type': 'Feature',
-                    'properties': {},
-                    'geometry': {
-                        'type': 'LineString',
-                        'coordinates': coordinates
+            try {
+                map.current.addSource(layerId, {
+                    'type': 'geojson',
+                    'data': {
+                        'type': 'Feature',
+                        'properties': {},
+                        'geometry': {
+                            'type': 'LineString',
+                            'coordinates': coordinates
+                        }
                     }
-                }
-            });
+                });
 
-            map.current.addLayer({
-                'id': layerId,
-                'type': 'line',
-                'source': layerId,
-                'layout': {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                },
-                'paint': {
-                    'line-color': color,
-                    'line-width': 4,
-                    'line-opacity': 0.8
-                }
-            });
+                map.current.addLayer({
+                    'id': layerId,
+                    'type': 'line',
+                    'source': layerId,
+                    'layout': {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    'paint': {
+                        'line-color': color,
+                        'line-width': 4,
+                        'line-opacity': 0.8
+                    }
+                });
 
-            routeLayers.current.push(layerId);
+                routeLayers.current.push(layerId);
+            } catch (err) {
+                console.error('Error adding route layer:', err);
+            }
         });
     }, [routes]);
 
     return (
         <div
             ref={mapElement}
-            className="w-full h-full bg-slate-900 rounded-2xl overflow-hidden border border-white/5"
-            style={{ minHeight: '400px' }}
+            className="w-full h-[600px] min-h-[600px] bg-slate-900 rounded-2xl overflow-hidden border-2 border-blue-500/10 shadow-inner"
         />
     );
 };

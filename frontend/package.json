@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tomtom-org/maps-sdk": "^0.45.10",
     "axios": "^1.13.6",
     "lucide-react": "^0.575.0",
     "maplibre-gl": "^5.19.0",
