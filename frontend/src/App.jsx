@@ -67,24 +67,28 @@ function App() {
           <h1 className="text-lg font-bold tracking-tight">Neuronova<span className="text-blue-500">.</span>Pro</h1>
         </div>
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
-          <div className={`w-2 h-2 rounded-full ${status === 'optimizing' ? 'bg-blue-500 animate-pulse' : 'bg-emerald-500'}`} />
+          <div className={`w-2 h-2 rounded-full ${status === 'optimizing' ? 'bg-blue-500 animate-pulse' : status === 'completed' ? 'bg-emerald-500' : 'bg-slate-500'}`} />
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{status}</span>
         </div>
         <Settings className="w-5 h-5 text-slate-400" />
       </header>
 
-      <main className="flex-1 relative">
-        <MapDisplay />
+      <main className="flex-1 relative flex flex-col p-4">
+        <div className="flex-1 relative rounded-2xl overflow-hidden shadow-2xl border border-white/5">
+          <MapDisplay locations={locations} routes={routes} />
+        </div>
 
         {/* Bottom Drawer Overlay */}
-        <div className="absolute bottom-6 inset-x-6 h-28 bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-5 flex items-center gap-5 z-30 shadow-2xl">
+        <div className="absolute bottom-10 inset-x-10 h-28 bg-slate-900/90 backdrop-blur-2xl border border-white/10 rounded-3xl p-5 flex items-center gap-5 z-30 shadow-2xl transition-all hover:bg-slate-800/90">
           <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
             <Package className="w-8 h-8 text-blue-400" />
           </div>
           <div className="flex-1">
             <h3 className="font-bold text-white text-sm">Fleet Status</h3>
             <p className="text-xs text-slate-400 mt-1">
-              {status === 'optimizing' ? 'Calculating routes...' : '27 Locations detected'}
+              {status === 'optimizing' ? 'Calculating routes...' :
+                status === 'completed' ? `${routes.length} Optimized Routes Found` :
+                  `${locations.length} Locations detected`}
             </p>
           </div>
           <button
