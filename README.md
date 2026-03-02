@@ -1,89 +1,78 @@
-# Tech4u_Neuronova
+# Neuronova Pro: Intelligent Last-Mile Delivery Optimization
 
-# Project Charter: Intelligent Last-Mile Delivery Optimization (DLMO)
+**Neuronova Pro** is a dynamic, city-intelligent routing engine designed to minimize fuel consumption and delivery time by navigating the complexities of urban environments.
 
-## 1. Project Overview
+## 🚀 Current Project Status (Built & Functional)
 
-**Objective:** To develop a dynamic, city-intelligent routing engine that minimizes fuel consumption and delivery time by navigating the "chaos" of urban environments (traffic, weather, and shifting priorities).
+We have successfully transitioned from a static roadmap to a live, high-fidelity Logistics Command Center.
 
-## 2. The Unique Value Proposition
-
-Unlike static routing software, this solution uses a **Predictive-Reactive Hybrid Architecture**. It doesn't just plan a route; it manages a live ecosystem by predicting "hidden" time sinks like parking difficulty and traffic ripple effects.
-
----
-
-## 3. Technical Architecture
-
-The system is divided into three functional layers:
-![Architecture_flow](./Architecture.png)
-
-### A. The Perception Layer (Data Ingest)
-
-- **Traffic Intelligence:** TomTom Matrix Routing v2 API (Live Traffic mode).
-- **Environmental Sensing:** OpenWeatherMap API for precipitation-based speed scaling.
-- **Stream Processing:** Apache Kafka for real-time GPS and new order ingestion.
-
-### B. The Intelligence Layer (ML Models)
-
-- **Service Time Predictor (XGBoost):** Forecasts dwell time (parking + walking) based on building density and time of day.
-- **Cost Function ($C$):** $$C = w_1(\text{Fuel}) + w_2(\text{Time}) + w_3(\text{Priority Penalty})$$
-
-### C. The Decision Layer (Optimization)
-
-- **Core Solver:** Google OR-Tools / PyVRP.
-- **Logic:** Employs Meta-heuristics (Tabu Search/Simulated Annealing) to solve the Vehicle Routing Problem (VRP).
+### 📍 Core Implementation Highlights:
+- **Map Engine**: Migrated to **MapLibre GL** for high-performance vector rendering.
+- **Visual Intelligence**: Integrated **OpenFreeMap** for detailed, CORS-friendly street tiles.
+- **Frontend Architecture**: Built with **React 19**, **Vite**, and **Zustand** for ultra-fast telemetry updates.
+- **Optimization Layer**: Powered by **Google OR-Tools**, implementing meta-heuristics for the Vehicle Routing Problem (VRP).
+- **Asynchronous Processing**: Implemented a **Background Worker Pattern** (FastAPI + Dedicated Worker) to handle complex matrix calculations without blocking the UI.
+- **Weather Integration**: Dynamic cost scaling based on real-time weather data (e.g., 6% penalty during cloud cover/rain).
+- **Containerization**: Fully Dockerized for seamless deployment across any environment.
 
 ---
 
-## 4. Implementation Roadmap
+## 🛠 Technology Stack
 
-![Implementation_flowchart](./Implementation.png)
-
-### Phase 1: Data Infrastructure
-
-- Integration of TomTom API for dynamic $N \times N$ matrix calculation.
-- Setup of PostGIS database for geospatial storage.
-
-### Phase 2: Predictive Development
-
-- Training XGBoost models on historical delivery data.
-- Creating the "Weather-Traffic" scalar for edge-weight adjustment.
-
-### Phase 3: Solver Configuration
-
-- Programming constraints: Vehicle capacity, driver shifts, and customer time windows.
-- Implementing "Penalty Weights" for high-priority tiers.
-
-### Phase 4: Reactive Logic
-
-- Designing "Chaos Triggers" (e.g., re-optimize if ETA variance > 15%).
-- Building the FastAPI gateway for mobile app communication.
+| Category | Tool / Framework |
+| :--- | :--- |
+| **Frontend** | React 19, Vite, Tailwind CSS, MapLibre GL |
+| **Backend** | FastAPI, Pydantic V2, Uvicorn |
+| **Optimization** | Google OR-Tools (Constraint Programming) |
+| **Data Flow** | Background Worker / Polling Architecture |
+| **Containerization** | Docker & Docker Compose |
+| **External APIs** | TomTom (Matrix & Routing), OpenWeatherMap |
 
 ---
 
-## 5. Technology Stack
+## 📟 Fleet Intelligence Dashboard
 
-| Category             | Tool / Framework               |
-| :------------------- | :----------------------------- |
-| **Language**         | Python 3.10+                   |
-| **Optimization**     | Google OR-Tools, PyVRP         |
-| **Machine Learning** | XGBoost, Scikit-learn, BentoML |
-| **Geospatial**       | PostGIS, GeoPandas, OSMnx      |
-| **Data Flow**        | FastAPI, Apache Kafka, Redis   |
+The application now features a professional "Operations Command" UI:
+- **Telemetry Cards**: Real-time tracking of Fleet Coverage and Efficiency Index.
+- **System Intelligence Terminal**: A monochrome live-log feed showing the optimizer's active logic paths.
+- **Reactive Design**: Glassmorphic, dark-mode aesthetic optimized for logistics operators.
 
 ---
 
-## 6. Economic Benefits & ROI
+## 📈 Roadmap & Progress
 
-- **Fuel Savings:** Projected 15–25% reduction.
-- **Labor Efficiency:** 20% increase in stops-per-hour.
-- **Customer Trust:** Real-time, high-accuracy ETAs with < 5% variance.
-- **Sustainability:** Direct reduction in CO2 footprint through minimized idling.
+- [x] **Phase 1: Data Infrastructure** (TomTom Matrix v2, MapLibre Engine)
+- [x] **Phase 2: Predictive Logic** (Weather impact factors, Service Time heuristics)
+- [x] **Phase 3: Optimization Solver** (OR-Tools VRP Implementation)
+- [x] **Phase 4: Reactive Deployment** (Real-time telemetry, Advanced UI Dashboard)
+- [x] **Phase 5: Containerization** (Docker & Orchestration)
+- [ ] **Phase 6: Production Hardening** (Persistence layer, User Authentication)
 
 ---
 
-## 7. Potential Challenges & Mitigations
+## ⚙️ Deployment & Setup
 
-- **API Costs:** Mitigated by "Triggered" re-optimization rather than constant polling.
-- **GPS Drift:** Mitigated by Hidden Markov Model (HMM) map-matching.
-- **Driver Trust:** Mitigated by territory clustering and intuitive UX.
+### 🐳 The Quickest Start (Docker)
+Launch the API, Worker, and Frontend with a single command:
+```bash
+docker-compose up --build
+```
+*Access the dashboard at http://localhost:5173* (or as reported by Vite in the logs).
+
+---
+
+### 💻 Manual Development Setup
+
+#### Backend (API & Worker)
+```bash
+python3 app/api.py & python3 app/worker.py
+```
+
+#### Frontend
+```bash
+cd frontend && npm run dev
+```
+
+---
+
+*© 2026 Neuronova Intelligence Systems // End_Transmission*
