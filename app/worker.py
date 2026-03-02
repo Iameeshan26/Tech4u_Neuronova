@@ -47,6 +47,17 @@ def run_worker():
             
             if solution:
                 routes = optimizer.print_solution()
+                
+                # Fetch detailed geometry for each route for frontend display
+                for route in routes:
+                    stop_coords = []
+                    for idx in route['sequence']:
+                        row = df.iloc[idx]
+                        stop_coords.append((row['lat'], row['lon']))
+                    
+                    logger.info(f"Fetching detailed path for vehicle {route['vehicle']}...")
+                    route['path'] = data_utils.get_tomtom_route(stop_coords)
+
                 # Ensure distance/time are JSON serializable (standard float)
                 result = {
                     "routes": routes,

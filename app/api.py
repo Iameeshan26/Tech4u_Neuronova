@@ -1,12 +1,25 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import uuid
 import db_store
 import os
 import logging
+import data_utils
+import pandas as pd
 
 app = FastAPI(title="Neuronova Pro API")
+
+# Enable CORS for frontend development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -24,6 +37,20 @@ class OptimizeRequest(BaseModel):
 @app.get("/")
 async def root():
     return {"message": "Neuronova Pro API is running (Asynchronous Worker Mode)."}
+
+@app.get("/locations")
+async def get_initial_locations():
+    """Serves the base delivery locations from CSV."""
+    root_dir = os.path.dirname(os.path.dirname(__file__))
+    file_path = os.path.join(root_dir, 'data', 'locations.csv')
+    try:
+        df = data_utils.load_data_from_csv(file_path)
+        if df is not None:
+            return df.to_dict('records')
+        return []
+    except Exception as e:
+        logger.error(f"Failed to load locations: {e}")
+        return []
 
 @app.post("/optimize")
 async def optimize(request: OptimizeRequest):

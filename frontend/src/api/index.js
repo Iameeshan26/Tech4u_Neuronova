@@ -5,6 +5,7 @@ const api = axios.create({
 });
 
 export const optimizeApi = {
+    getLocations: () => api.get('/locations'),
     createJob: (city, locations) => api.post('/optimize', { city, locations }),
     getJobStatus: (jobId) => api.get(`/status/${jobId}`),
 };
