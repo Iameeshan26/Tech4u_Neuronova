@@ -64,48 +64,127 @@ function App() {
     <div className="flex flex-col h-screen w-full bg-slate-950 overflow-hidden font-sans text-white">
       <header className="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-slate-900/50 backdrop-blur-md z-40">
         <div className="flex items-center gap-3">
-          <Activity className="w-5 h-5 text-blue-400" />
+          <div className="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
+            <Activity className="w-5 h-5 text-blue-400" />
+          </div>
           <h1 className="text-lg font-bold tracking-tight">Neuronova<span className="text-blue-500">.</span>Pro</h1>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
-          <div className={`w-2 h-2 rounded-full ${status === 'optimizing' ? 'bg-blue-500 animate-pulse' : status === 'completed' ? 'bg-emerald-500' : 'bg-slate-500'}`} />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{status}</span>
+
+        <div className="flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+              <span>API Gateway: Online</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={`w-1.5 h-1.5 rounded-full ${status === 'optimizing' ? 'bg-blue-500 animate-pulse' : 'bg-slate-600'}`} />
+              <span>Optimizer: {status === 'optimizing' ? 'Processing' : 'Standby'}</span>
+            </div>
+          </div>
+          <div className="h-8 w-px bg-white/5" />
+          <Settings className="w-5 h-5 text-slate-400 cursor-pointer hover:text-white transition-colors" />
         </div>
-        <Settings className="w-5 h-5 text-slate-400" />
       </header>
 
-      <main className="flex-1 relative flex flex-col p-4">
-        <div className="flex-1 relative rounded-2xl overflow-hidden shadow-2xl border border-white/5">
-          <MapDisplay locations={locations} routes={routes} />
-        </div>
-
-        {/* Bottom Drawer Overlay */}
-        <div className="absolute bottom-10 inset-x-10 h-28 bg-slate-900/90 backdrop-blur-2xl border border-white/10 rounded-3xl p-5 flex items-center gap-5 z-30 shadow-2xl transition-all hover:bg-slate-800/90">
-          <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-            <Package className="w-8 h-8 text-blue-400" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-bold text-white text-sm">Fleet Status</h3>
-            <p className="text-xs text-slate-400 mt-1">
-              {status === 'optimizing' ? 'Calculating routes...' :
-                status === 'completed' ? `${routes.length} Optimized Routes Found` :
-                  `${locations.length} Locations detected`}
-            </p>
+      <main className="flex-1 relative flex flex-col p-4 gap-4">
+        {/* Top Control Bar */}
+        <div className="flex justify-between items-center px-2">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight text-white uppercase italic">Fleet Overview</h2>
+            <p className="text-[10px] text-slate-500 font-medium uppercase tracking-[0.2em]">Real-time logistics monitoring</p>
           </div>
           <button
             onClick={handleCheckJobs}
             disabled={status === 'optimizing'}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 text-white font-bold rounded-2xl shadow-lg transition-all text-xs flex items-center gap-2"
+            className={`group relative px-8 py-4 overflow-hidden rounded-2xl font-black uppercase tracking-tighter text-sm transition-all duration-500 ${status === 'optimizing'
+              ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-500 hover:shadow-[0_0_30px_rgba(37,99,235,0.4)] active:scale-95'
+              }`}
           >
-            {status === 'optimizing' && <Loader2 className="w-4 h-4 animate-spin" />}
-            Check Jobs
+            <div className="relative z-10 flex items-center gap-3">
+              {status === 'optimizing' ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Sequencing...</span>
+                </>
+              ) : (
+                <>
+                  <Navigation className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                  <span>Activate Optimizer</span>
+                </>
+              )}
+            </div>
+            {!status === 'optimizing' && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />}
           </button>
+        </div>
+
+        {/* Map Container */}
+        <div className="flex-1 relative rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/5 bg-slate-900">
+          <MapDisplay locations={locations} routes={routes} />
+
+          {/* Dashboard Overlay */}
+          <div className="absolute bottom-6 left-6 right-6 flex flex-col md:flex-row gap-4 pointer-events-none">
+            {/* Stat Card 1 */}
+            <div className="flex-1 bg-slate-950/80 backdrop-blur-xl border border-white/10 p-4 rounded-2xl pointer-events-auto shadow-2xl">
+              <div className="flex items-center gap-3 mb-2">
+                <Package className="w-4 h-4 text-blue-400" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Fleet Coverage</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-black tracking-tighter">{locations.length}</span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Nodes</span>
+              </div>
+              <div className="mt-2 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-500 w-3/4 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+              </div>
+            </div>
+
+            {/* Stat Card 2 */}
+            <div className="flex-1 bg-slate-950/80 backdrop-blur-xl border border-white/10 p-4 rounded-2xl pointer-events-auto shadow-2xl">
+              <div className="flex items-center gap-3 mb-2">
+                <Activity className="w-4 h-4 text-emerald-400" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Efficiency Index</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-black tracking-tighter">{status === 'completed' ? '98.4' : '--.-'}</span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase">% Optimal</span>
+              </div>
+              <div className="mt-2 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                <div className={`h-full ${status === 'completed' ? 'bg-emerald-500' : 'bg-slate-700'} w-full transition-all duration-1000`} />
+              </div>
+            </div>
+
+            {/* Stat Card 3: AI Terminal */}
+            <div className="flex-[1.5] bg-slate-950/80 backdrop-blur-xl border border-white/10 p-4 rounded-2xl pointer-events-auto shadow-2xl relative overflow-hidden">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">System Intelligence</span>
+                </div>
+                <span className="text-[8px] font-mono text-blue-500/50">#X-99_LOG</span>
+              </div>
+              <div className="space-y-1 font-mono text-[9px] text-slate-400 leading-tight">
+                <p className="text-emerald-500/70">{">"} Initializing node discovery...</p>
+                <p>{status === 'optimizing' ? "> Processing demand matrix (OR-Tools)..." : "> Standby for sequence command."}</p>
+                {status === 'completed' && <p className="text-blue-400">{">"} Optimization complete. Routes flushed to UI.</p>}
+              </div>
+              <div className="absolute top-0 right-0 p-2 opacity-5 pointer-events-none">
+                <Activity className="w-20 h-20" />
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
-      <footer className="h-20 bg-slate-900 border-t border-white/5 flex items-center justify-around px-8">
-        <Navigation className="w-6 h-6 text-blue-500" />
-        <Package className="w-6 h-6 text-slate-500" />
+      <footer className="h-16 bg-slate-950 border-t border-white/5 flex items-center justify-between px-10">
+        <div className="flex items-center gap-8 text-slate-600 italic font-black text-xs uppercase tracking-tighter">
+          <span className="text-blue-500 underline decoration-2 underline-offset-4">Fleet</span>
+          <span className="hover:text-slate-400 cursor-pointer">Matrix</span>
+          <span className="hover:text-slate-400 cursor-pointer">Sensors</span>
+        </div>
+        <div className="text-[10px] font-mono text-slate-700 uppercase tracking-widest">
+          © 2026 Neuronova Intelligence Systems // End_Transmission
+        </div>
       </footer>
     </div>
   );
