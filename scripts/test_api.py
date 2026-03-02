@@ -18,7 +18,8 @@ locations = [
 
 def test_optimization():
     print("Testing Root...")
-    print(requests.get(f"{BASE_URL}/").json())
+    resp = requests.get(f"{BASE_URL}/")
+    print(resp.json())
 
     print("\nRequesting Optimization...")
     payload = {"locations": locations}
