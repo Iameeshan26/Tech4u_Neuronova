@@ -168,6 +168,8 @@ def main():
     logger.info(f"Starting {profile['name']} Delivery Optimizer...")
     
     base_dir = os.path.dirname(os.path.dirname(__file__))
+    output_dir = os.path.join(base_dir, "outputs")
+    os.makedirs(output_dir, exist_ok=True)
     
     if args.mock:
         logger.info(f"Generating mock data for {args.city}...")
