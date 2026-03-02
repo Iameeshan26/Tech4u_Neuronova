@@ -55,7 +55,7 @@ The application now features a professional "Operations Command" UI:
 ### 🐳 The Quickest Start (Docker)
 Launch the API, Worker, and Frontend with a single command:
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 *Access the dashboard at http://localhost:5173* (or as reported by Vite in the logs).
 
