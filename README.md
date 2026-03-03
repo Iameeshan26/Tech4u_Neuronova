@@ -16,7 +16,7 @@ We have successfully transitioned from a static roadmap to a live, high-fidelity
 
 > [!TIP]
 > **View the Logistics Command Center in action!**
-> 
+> [![Demo video]("Demo.jpg")](Demo.mp4)
 > <video src="Demo.mp4" poster="Demo.jpg" width="100%" controls></video>
 
 ---
