@@ -16,8 +16,8 @@ We have successfully transitioned from a static roadmap to a live, high-fidelity
 
 > [!TIP]
 > **View the Logistics Command Center in action!**
-> ![video Demo](Demo.mp4)
-> <video src="Demo.mp4" width="100%" controls></video>
+> 
+> <video src="Demo.mp4" poster="Demo.jpg" width="100%" controls></video>
 
 ---
 - **Frontend Architecture**: Built with **React 19**, **Vite**, and **Zustand** for ultra-fast telemetry updates.
