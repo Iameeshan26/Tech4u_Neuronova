@@ -9,6 +9,17 @@ We have successfully transitioned from a static roadmap to a live, high-fidelity
 ### 📍 Core Implementation Highlights:
 - **Map Engine**: Migrated to **MapLibre GL** for high-performance vector rendering.
 - **Visual Intelligence**: Integrated **OpenFreeMap** for detailed, CORS-friendly street tiles.
+
+---
+
+## 📺 Demo
+
+> [!TIP]
+> **View the Logistics Command Center in action!**
+> 
+> <video src="Demo.mp4" width="100%" controls></video>
+
+---
 - **Frontend Architecture**: Built with **React 19**, **Vite**, and **Zustand** for ultra-fast telemetry updates.
 - **Optimization Layer**: Powered by **Google OR-Tools**, implementing meta-heuristics for the Vehicle Routing Problem (VRP).
 - **Asynchronous Processing**: Implemented a **Background Worker Pattern** (FastAPI + Dedicated Worker) to handle complex matrix calculations without blocking the UI.
